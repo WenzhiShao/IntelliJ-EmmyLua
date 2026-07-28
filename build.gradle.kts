@@ -83,7 +83,7 @@ fun getRev(): String {
     return runCmd("git", "rev-parse", "HEAD").substring(0, 7)
 }
 
-task("downloadEmmyDebugger", type = Download::class) {
+tasks.create<Download>("downloadEmmyDebugger") {
     src(arrayOf(
         "https://github.com/EmmyLua/EmmyLuaDebugger/releases/download/${emmyDebuggerVersion}/darwin-arm64.zip",
         "https://github.com/EmmyLua/EmmyLuaDebugger/releases/download/${emmyDebuggerVersion}/darwin-x64.zip",
@@ -95,7 +95,7 @@ task("downloadEmmyDebugger", type = Download::class) {
     dest("temp")
 }
 
-task("unzipEmmyDebugger", type = Copy::class) {
+tasks.create<Copy>("unzipEmmyDebugger") {
     dependsOn("downloadEmmyDebugger")
     from(zipTree("temp/win32-x86.zip")) {
         into("windows/x86")
@@ -115,7 +115,7 @@ task("unzipEmmyDebugger", type = Copy::class) {
     destinationDir = file("temp")
 }
 
-task("installEmmyDebugger", type = Copy::class) {
+tasks.create<Copy>("installEmmyDebugger") {
     dependsOn("unzipEmmyDebugger")
     from("temp/windows/x64/") {
         include("emmy_core.dll")
@@ -175,7 +175,7 @@ project(":") {
         sandboxContainer.set(layout.buildDirectory.dir("${buildVersionData.ideaSDKShortVersion}/idea-sandbox"))
     }
 
-    task("bunch") {
+    tasks.create("bunch") {
         doLast {
             val rev = getRev()
             // reset
@@ -222,11 +222,11 @@ project(":") {
             doLast {
                 copy {
                     from("src/main/resources/std")
-                    into("$destinationDir/${pluginName.get()}/std")
+                    into("$destinationDir/${project.name}/std")
                 }
                 copy {
                     from("src/main/resources/debugger")
-                    into("$destinationDir/${pluginName.get()}/debugger")
+                    into("$destinationDir/${project.name}/debugger")
                 }
             }
         }
