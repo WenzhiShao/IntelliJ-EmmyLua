@@ -222,15 +222,15 @@ project(":") {
             token.set(System.getenv("IDEA_PUBLISH_TOKEN"))
         }
 
-        withType<Copy> {
+        withType<PrepareSandboxTask> {
             doLast {
                 copy {
                     from("src/main/resources/std")
-                    into("$destinationDir/${project.name}/std")
+                    into("$destinationDir/${pluginName.get()}/std")
                 }
                 copy {
                     from("src/main/resources/debugger")
-                    into("$destinationDir/${project.name}/debugger")
+                    into("$destinationDir/${pluginName.get()}/debugger")
                 }
             }
         }
