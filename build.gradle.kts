@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -23,7 +23,7 @@ import java.io.ByteArrayOutputStream
 plugins {
     id("org.jetbrains.intellij.platform") version "2.18.1"
     id("org.jetbrains.kotlin.jvm").version("2.3.0")
-    id("de.undercouch.download").version("5.6.0")
+    id("de.undercouch.download") version "5.6.0"
 }
 
 data class BuildData(
@@ -68,26 +68,19 @@ val isCI = System.getenv("CI") != null
 // CI
 if (isCI) {
     version = System.getenv("CI_BUILD_VERSION")
-    exec {
-        executable = "git"
-        args("config", "--global", "user.email", "love.tangzx@qq.com")
-    }
-    exec {
-        executable = "git"
-        args("config", "--global", "user.name", "tangzx")
-    }
 }
 
 version = "${version}-IDEA${buildVersion}"
 
+fun runCmd(vararg command: String): String {
+    val process = ProcessBuilder(*command).redirectErrorStream(true).start()
+    val output = process.inputStream.bufferedReader().readText()
+    process.waitFor()
+    return output.trim()
+}
+
 fun getRev(): String {
-    val os = ByteArrayOutputStream()
-    exec {
-        executable = "git"
-        args("rev-parse", "HEAD")
-        standardOutput = os
-    }
-    return os.toString().substring(0, 7)
+    return runCmd("git", "rev-parse", "HEAD").substring(0, 7)
 }
 
 task("downloadEmmyDebugger", type = Download::class) {
@@ -136,11 +129,11 @@ task("installEmmyDebugger", type = Copy::class) {
         include("emmy_core.so")
         into("debugger/emmy/linux")
     }
-    from("temp/mac/x64") {
+    from("temp/mac/x64/") {
         include("emmy_core.dylib")
         into("debugger/emmy/mac/x64")
     }
-    from("temp/mac/arm64") {
+    from("temp/mac/arm64/") {
         include("emmy_core.dylib")
         into("debugger/emmy/mac/arm64")
     }
@@ -177,11 +170,6 @@ project(":") {
         }
     }
 
-    /*configure<JavaPluginConvention> {
-        sourceCompatibility = buildVersionData.targetCompatibilityLevel
-        targetCompatibility = buildVersionData.targetCompatibilityLevel
-    }*/
-
     intellijPlatform {
         version = version
         sandboxContainer.set(layout.buildDirectory.dir("${buildVersionData.ideaSDKShortVersion}/idea-sandbox"))
@@ -191,25 +179,13 @@ project(":") {
         doLast {
             val rev = getRev()
             // reset
-            exec {
-                executable = "git"
-                args("reset", "HEAD", "--hard")
-            }
+            runCmd("git", "reset", "HEAD", "--hard")
             // clean untracked files
-            exec {
-                executable = "git"
-                args("clean", "-d", "-f")
-            }
+            runCmd("git", "clean", "-d", "-f")
             // switch
-            exec {
-                executable = if (isWin) "bunch/bin/bunch.bat" else "bunch/bin/bunch"
-                args("switch", ".", buildVersionData.bunch)
-            }
+            runCmd(if (isWin) "bunch/bin/bunch.bat" else "bunch/bin/bunch", "switch", ".", buildVersionData.bunch)
             // reset to HEAD
-            exec {
-                executable = "git"
-                args("reset", rev)
-            }
+            runCmd("git", "reset", rev)
         }
     }
 
@@ -242,7 +218,7 @@ project(":") {
             token.set(System.getenv("IDEA_PUBLISH_TOKEN"))
         }
 
-        withType<PrepareSandboxTask> {
+        withType<Copy> {
             doLast {
                 copy {
                     from("src/main/resources/std")
