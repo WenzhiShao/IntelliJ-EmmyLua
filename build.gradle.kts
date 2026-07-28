@@ -208,6 +208,10 @@ project(":") {
             }
         }
 
+        withType<JavaCompile> {
+            options.release.set(21)
+        }
+
         patchPluginXml {
             dependsOn("installEmmyDebugger")
             sinceBuild.set(buildVersionData.sinceBuild)
